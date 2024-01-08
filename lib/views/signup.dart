@@ -44,14 +44,13 @@ class _SingupPageState extends State<SingupPage> {
         },
       );
       if(_passwordFieldController.text == _cpasswordFieldController.text){
-        var res = await AuthApi().postUser(data, '/signup');
+        var res = await AuthApi().postUser(data,"/signup");
         // Decode the JSON string into a Map
         Map<String, dynamic> jsonData = jsonDecode(res.body);
         // Access the keys and values
         String message = jsonData['message'];
         String status = jsonData['status'];
         if(status=='success'){
-          // Navigator.pop(context);
           Navigator.push(context, MaterialPageRoute(builder: (context)=>LoginPage()));
           toast.showToast(message);
           _emailTextController.clear();

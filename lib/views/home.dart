@@ -1,18 +1,22 @@
 
 import 'dart:developer';
-
+import 'package:flutter/foundation.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:sojrel_sacco_client/components/buttons.dart';
 import 'package:sojrel_sacco_client/components/divider.dart';
 import 'package:sojrel_sacco_client/services/members_service.dart';
 import 'package:sojrel_sacco_client/utils/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sojrel_sacco_client/views/login.dart';
 
+import '../components/textfields.dart';
+import '../components/toast.dart';
 import '../models/contribution_model.dart';
 import '../models/member_model.dart';
 import '../services/member_details_service.dart';
+import '../utils/formetter.dart';
 
 
 class HomePage extends StatefulWidget {
@@ -24,6 +28,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final _searchTextController = TextEditingController();
+  final _contribSearchTextController=TextEditingController();
   MyColors colors = MyColors();
   String? token;
   String? email;
@@ -43,16 +49,8 @@ class _HomePageState extends State<HomePage> {
   bool _isVisible=true;
   bool _isVisibleShare=true;
   bool _isVisibleSaving=true;
-  // final _navKey = GlobalKey<NavigatorState>();
+  String? seachValue;
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    _loadUserData();
-    member = _fetchMemberDetails()!;
-    // _getGreeting();
-  }
 
   Future<void> _loadUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -66,13 +64,13 @@ class _HomePageState extends State<HomePage> {
     DateTime now = DateTime.now();
     int hour = now.hour;
     if (hour >= 5 && hour < 12) {
-      greetings = 'Good Morning, $firstName';
+      greetings = 'Good Morning $firstName!';
     } else if (hour >= 12 && hour < 17) {
-      greetings = 'Good Afternoon, $firstName';
+      greetings = 'Good Afternoon $firstName!';
     } else if (hour >= 17 && hour < 20) {
-      greetings = 'Good Evening, $firstName';
+      greetings = 'Good Evening $firstName!';
     } else {
-      greetings = 'Good Night, $firstName';
+      greetings = 'Good Night $firstName!';
     }
     return greetings;
   }
@@ -80,7 +78,7 @@ class _HomePageState extends State<HomePage> {
   Future<Member>? _fetchMemberDetails() async {
     try {
       Member fetchedMember = await MemberDetails().fetchMemberDetails();
-      SharedPreferences prefs = await SharedPreferences.getInstance();
+
        return fetchedMember;
     }
     on FormatException catch (e) {
@@ -97,17 +95,68 @@ class _HomePageState extends State<HomePage> {
   }
 
 
-  Future<List<Contribution>?> getMemberContributions() async {
+
+
+  Future<List<Contribution>?> getMemberContributions(String value) async {
     Member member = await MemberDetails().fetchMemberDetails();
-    return member.contributions;
+    List<Contribution> list = member.contributions!;
+    if(value.isEmpty){
+      contributionList=list;
+    }
+    else{
+      contributionList = list.where((e)
+      {
+        if(e.contributionType!.toLowerCase().contains(value.toLowerCase())){
+          return e.contributionType!.toLowerCase().contains(value.toLowerCase());//search by type
+        }
+        else if(e.amount!.toString().toLowerCase().contains(value.toLowerCase())){
+          return e.amount!.toString().toLowerCase().contains(value.toLowerCase());
+        }
+        else{
+          return DateFormat('dd MMM yyyy')
+              .format(DateTime.parse(e.contributionDate!)).toLowerCase().contains(value.toLowerCase()); //search by date
+        }
+      }).toList();
+    }
+    return contributionList;
 
   }
-  Future<List<Member>?> getAllMembers() async {
-    return await MemberService().fetchMembers();
+
+  Future<List<Member>?> getAllMembers(String value) async {
+    List<Member>? list =  await MemberService().fetchMembers();
+    if(value.isEmpty){
+      membersList = list;
+    }
+    else{
+      membersList = list!.where((e){
+        if(e.firstName!.toLowerCase().contains(value.toLowerCase())){
+          return e.firstName!.toLowerCase().contains(value.toLowerCase());//search by firstName
+        }
+        else if(e.midName!.toLowerCase().contains(value.toLowerCase())){
+          return e.midName!.toLowerCase().contains(value.toLowerCase()); //search by midName
+        }
+        else if(e.lastName!.toLowerCase().contains(value.toLowerCase())){
+          return e.lastName!.toLowerCase().contains(value.toLowerCase()); //search by lastName
+        }
+        else {
+          return e.id!.toLowerCase().contains(value.toLowerCase()); //search by memberId
+        }
+      }).toList();
+    }
+    return membersList;
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _loadUserData();
+    member = _fetchMemberDetails()!;
   }
 
   @override
   Widget build(BuildContext context) {
+    DateTime dateTimeBackPressed = DateTime.now();
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       body: SingleChildScrollView(
@@ -136,7 +185,7 @@ class _HomePageState extends State<HomePage> {
                         );
                       } else if (snapshot.hasError) {
                         // Navigator.pop(context);
-                        return Text('Error!');
+                        return const Text('Error!');
                       } else {
                         Member fetchedMember = snapshot.data!;
                         fname = fetchedMember.firstName;
@@ -146,8 +195,8 @@ class _HomePageState extends State<HomePage> {
 
                         return Text(
                           mname != ''
-                              ? '${fname![0] + mname![0]}'
-                              : '${fname![0] + lname![0]}',
+                              ? fname![0] + mname![0]
+                              : fname![0] + lname![0],
                           style: TextStyle(
                               color: colors.white,
                               fontWeight: FontWeight.bold,
@@ -157,7 +206,7 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-                SizedBox(height: 12,),
+                const SizedBox(height: 12,),
                 SizedBox(
                   child: FutureBuilder<Member>(
                     future: _fetchMemberDetails(),
@@ -196,7 +245,7 @@ class _HomePageState extends State<HomePage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Total Contributions', style: TextStyle(color:Theme.of(context).colorScheme.tertiary),),
+                              Text('Total Contributions', style: TextStyle(color:Theme.of(context).colorScheme.tertiary,fontSize: 18, fontWeight: FontWeight.bold),),
                               GestureDetector(onTap: (){
                                 setState(() {
                                   _isVisible = !_isVisible;
@@ -215,13 +264,12 @@ class _HomePageState extends State<HomePage> {
                                 }
                                 else if (snapshot.hasError) {
                                   return const Text('Error');
-
                                 }
                                 else {
                                   Member fetchedMember = snapshot.data!;
                                   total = fetchedMember.totalContributions;
                                   // ... (Update other properties as needed)
-                                  return Text(total!=null ? 'Ksh ${total}':'loading..', style: TextStyle(color: Theme.of(context).colorScheme.tertiary, fontWeight: FontWeight.bold),);
+                                  return Text(total!=null ? 'Ksh ${NumberFormat('#,###').format(total)}':'Ksh 0.0', style: TextStyle(color: Theme.of(context).colorScheme.tertiary, fontWeight: FontWeight.bold,fontSize: 16),);
                                 }
                               },
                             ),
@@ -254,7 +302,7 @@ class _HomePageState extends State<HomePage> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                  Text('Savings',style: TextStyle(color: colors.white)),
+                                  Text('Savings',style: TextStyle(color: colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                                   GestureDetector(onTap: (){
                                     setState(() {
                                       _isVisibleSaving = !_isVisibleSaving;
@@ -270,12 +318,12 @@ class _HomePageState extends State<HomePage> {
                                       if (snapshot.connectionState == ConnectionState.waiting) {
                                         return Text('Loading...', style: TextStyle(color: colors.white));
                                       } else if (snapshot.hasError) {
-                                        return Text('Error');
+                                        return const Text('Error');
                                       } else {
                                         Member fetchedMember = snapshot.data!;
                                         savings = fetchedMember.totalSavings;
                                         // ... (Update other properties as needed)
-                                        return Text(savings!=null?"Ksh ${savings}":'loading..',style: TextStyle(color: colors.white, fontWeight: FontWeight.bold));
+                                        return Text(savings!=null?"Ksh ${NumberFormat('#,###').format(savings)}":'Ksh 0.0',style: TextStyle(color: colors.white, fontWeight: FontWeight.bold, fontSize: 16));
                                       }
                                     },
                                   ),
@@ -284,7 +332,7 @@ class _HomePageState extends State<HomePage> {
                               ],
                             )
                           ),
-                          SizedBox(width: 12,),
+                          const SizedBox(width: 12,),
                           Container(
                             width: 240,
                             decoration: BoxDecoration(
@@ -299,7 +347,7 @@ class _HomePageState extends State<HomePage> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('Shares',style: TextStyle(color: colors.white)),
+                                    Text('Shares',style: TextStyle(color: colors.white,fontSize: 18, fontWeight: FontWeight.bold)),
                                     GestureDetector(onTap: (){
                                       setState(() {
                                         _isVisibleShare = !_isVisibleShare;
@@ -321,7 +369,7 @@ class _HomePageState extends State<HomePage> {
                                         Member fetchedMember = snapshot.data!;
                                         shares = fetchedMember.totalShares;
                                         // ... (Update other properties as needed)
-                                        return Text(shares!=null?'Ksh ${shares}':'loading..',style: TextStyle(color: colors.white, fontWeight: FontWeight.bold));
+                                        return Text(shares!=null?'Ksh ${NumberFormat('#,###').format(shares)}':'Ksh 0.0',style: TextStyle(color: colors.white, fontWeight: FontWeight.bold, fontSize: 16));
                                       }
                                     },
                                   ),
@@ -363,13 +411,13 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                SizedBox(height: 12,),
+                const SizedBox(height: 12,),
                 Card(
                   color: Theme.of(context).colorScheme.primary,
                   elevation: 4,
                   child: Container(
                     height: 130,
-                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,71 +459,113 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         builder: (context){
-          return SingleChildScrollView(
-            child: Container(
-              height: MediaQuery.of(context).size.height/1.05,
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                children: [
-                  const SizedBox(height: 18,),
-                  Container(
-                    height: 60,
-                    width: MediaQuery.of(context).size.width,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                        color: colors.green,
-                        borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text('Sacco Members',style: TextStyle(fontWeight: FontWeight.bold, color: colors.white)),
+          return Container(
+            height: MediaQuery.of(context).size.height / 1.1,
+            decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.background,
+              borderRadius: BorderRadius.circular(10)
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 18,),
+                Container(
+                  height: 60,
+                  width: MediaQuery.of(context).size.width,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                      color: colors.green,
+                      borderRadius: BorderRadius.circular(8),
                   ),
-                  const SizedBox(height: 12,),
-                  Expanded(
-                      child: FutureBuilder(
-                        future: getAllMembers(),
-                        builder: (context, snapshot){
-                          if(snapshot.hasData){
-                            membersList = snapshot.data;
-                            return ListView.separated(
-                              itemCount: membersList == null? 0: membersList!.length,
-                              itemBuilder: (BuildContext context, int index){
-                                Member? members = membersList?[index];
-                                return SizedBox(
-                                  height: 48,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      children: [
-                                        Text('${members!.id}:', style: const TextStyle(fontWeight: FontWeight.bold),),
-                                        const SizedBox(width: 2,),
-                                        Text(members.midName != '' ?'${members.firstName} ${members.midName}' : '${members.firstName} ${members.lastName}', style: TextStyle(fontWeight: FontWeight.bold),),
-                                        ],
-                                    ),
-                                  ),
-                                );
-                              }, separatorBuilder: (BuildContext context, int index) => MyDivider(),
+                  child: Text('Sacco Members',style: TextStyle(fontWeight: FontWeight.bold, color: colors.white)),
+                ),
+                const SizedBox(height: 8,),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: MySearchTextField(
+                      fieldController: _searchTextController,
+                      validatorText: 'Enter value to search',
+                      hintText: 'Search',
+                      iconColor: Theme.of(context).colorScheme.secondary,
+                      suffixIcon: const Icon(Icons.search),
+                      onChanged: (searchValue)=>getAllMembers(searchValue)),
+                ),
+                const SizedBox(height: 8.0),
+                // const SizedBox(height: 12,),
+                Expanded(
+                    child: FutureBuilder(
+                      future: getAllMembers(_searchTextController.text),
+                      builder: (context, snapshot){
+                        if(snapshot.hasData){
+                          membersList = snapshot.data;
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return Center(
+                                child: SizedBox(
+                                    width: 46,
+                                    height: 46,
+                                    child: CircularProgressIndicator(color: colors.green,)));
+                          }
+                          else if(snapshot.hasError){
+                            return const Center(child: Text("Error in fetching data"),);
+                          }
+                          else{
+                          if(membersList!.isEmpty){
+                            return const Center(child: Text("No Data"),);
+                          }
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: LiquidPullToRefresh(
+                                onRefresh: ()=>getAllMembers(_searchTextController.text),
+                                showChildOpacityTransition: false,
+                                backgroundColor: colors.green,
+                                color: Colors.transparent,
+                                height: 80,
+                                child: ListView.separated(
+                                  itemCount: membersList == null? 0: membersList!.length,
+                                  itemBuilder: (BuildContext context, int index){
+                                    Member? members = membersList?[index];
+                                    if(membersList!.isEmpty){
+                                      return const Center(child: Text("No data"),);
+                                    }
+                                    return SizedBox(
+                                      height: 48,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          // crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('${members!.id}: ', style: const TextStyle(fontSize: 18),),
+                                            const SizedBox(width: 1,),
+                                            Text(members.midName!.isNotEmpty ?'${members.firstName} ${members.midName}' : '${members.firstName} ${members.lastName}',style: const TextStyle(fontSize: 18)),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }, separatorBuilder: (BuildContext context, int index) => MyDivider(),
+                                ),
+                              ),
                             );
                           }
-                          return Center(
-                              child: SizedBox(
-                                  width: 46,
-                                  height: 46,
-                                  child: CircularProgressIndicator(color: colors.green,)));
-                        },
-                      )
-                  ),
-                  // SizedBox(
-                  //   height: 48,
-                  //   child: Row(
-                  //     mainAxisAlignment: MainAxisAlignment.center,
-                  //     children: [
-                  //       IconButton(onPressed: ()=> Navigator.pop(context), icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.tertiary,size: 36,))
-                  //     ],
-                  //   ),
-                  // )
-                ],
-              ),
+                        }
+                        return Center(
+                            child: SizedBox(
+                                width: 46,
+                                height: 46,
+                                child: CircularProgressIndicator(color: colors.green,)));
+                      }
+                    )
+                ),
+                // SizedBox(
+                //   height: 48,
+                //   child: Row(
+                //     mainAxisAlignment: MainAxisAlignment.center,
+                //     children: [
+                //       IconButton(onPressed: ()=> Navigator.pop(context), icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.tertiary,size: 36,))
+                //     ],
+                //   ),
+                // )
+              ],
             ),
           );
         }
@@ -487,103 +577,136 @@ class _HomePageState extends State<HomePage> {
         context: context,
         isScrollControlled: true,
         isDismissible: false,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
               topLeft: Radius.circular(10),
               topRight: Radius.circular(10)
           ),
         ),
         builder: (context){
-          return SingleChildScrollView(
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height/1.05,
-              // padding: EdgeInsets.all(8),
-              child: Column(
-                children: [
-                  const SizedBox(height: 12,),
-                  Container(
-                    height: 60,
-                    width: MediaQuery.of(context).size.width,
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: colors.green,
-                      borderRadius: BorderRadius.circular(4),
-                      // border: Border.all(width: 1.0)
-                    ),
-                    child: Text('Contribution History', style: TextStyle(fontWeight: FontWeight.bold, color: colors.white),),
+          return Container(
+            height: MediaQuery.of(context).size.height / 1.1,
+            decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.background,
+              borderRadius: BorderRadius.circular(10.0)
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 12,),
+                Container(
+                  height: 60,
+                  width: MediaQuery.of(context).size.width,
+                  margin: const EdgeInsets.symmetric(horizontal: 12.0),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: colors.green,
+                    borderRadius: BorderRadius.circular(4),
+                    // border: Border.all(width: 1.0)
                   ),
-                  const SizedBox(height: 8,),
-                  Expanded(
-                      child: FutureBuilder(
-                        future: getMemberContributions(),
-                        builder: (context, snapshot){
-                          if(snapshot.hasData){
-                            contributionList = snapshot.data;
-                            return ListView.builder(
-                              itemCount: contributionList == null? 0: contributionList!.length,
+                  child: Text('Contribution History', style: TextStyle(fontWeight: FontWeight.bold, color: colors.white),),
+                ),
+                const SizedBox(height: 8,),
+                 Padding(
+                   padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                   child: MySearchTextField(
+                     fieldController: _contribSearchTextController,
+                     validatorText: 'Enter value to search',
+                     hintText: 'Search',
+                     iconColor: Theme.of(context).colorScheme.secondary,
+                     onChanged: (value) => getMemberContributions(value),
+                     suffixIcon: const Icon(Icons.search)
+                   ),
+                 ),
+                const SizedBox(height: 8.0),
+                Expanded(
+                    child: FutureBuilder(
+                      future: getMemberContributions(_contribSearchTextController.text),
+                      builder: (context, snapshot){
+                        if(snapshot.hasData){
+                          contributionList = snapshot.data!;
+                          if(contributionList!.isEmpty){
+                            return const Center(child: Text("No Data"),);
+                          }
+                          return LiquidPullToRefresh(
+                            onRefresh: ()=>getMemberContributions(_contribSearchTextController.text),
+                            showChildOpacityTransition: false,
+                            backgroundColor: colors.green,
+                            color: Colors.transparent,
+                            height: 80,
+                            child: ListView.builder(
+                              itemCount: contributionList!.length,
                               itemBuilder: (BuildContext context, int index){
-                                Contribution? contributions = contributionList?[index];
+                                Contribution? contributions = contributionList![index];
                                 return SizedBox(
-                                  height: 100,
-                                  child: Card(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              const Text('Date:', style: TextStyle(fontWeight: FontWeight.bold),),
-                                              Text(DateFormat('dd MMM yyyy').format(DateTime.parse(contributions!.contributionDate!)).toString(), style: TextStyle(fontWeight: FontWeight.bold),),
-                                            ],
-                                          ),
-                                          MyDivider(),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              const Text('Contribution Type:'),
-                                              Text('${contributions.contributionType}')
-                                            ],
-                                          ),
+                                  height: 60,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                    child: Card(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                const Text('Date:', style: TextStyle(fontWeight: FontWeight.bold),),
+                                                Text(DateFormat('dd MMM yyyy').format(DateTime.parse(contributions.contributionDate!)).toString(), style: const TextStyle(fontWeight: FontWeight.bold),),
+                                              ],
+                                            ),
+                                            // MyDivider(),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    const SizedBox(child: Text('Type:')),
+                                                    const SizedBox(width: 2,),
+                                                    SizedBox(child: Text(Formatter().formatAsTitle(contributions.contributionType!)))
+                                                  ],
+                                                ),
 
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              const Text('Amount:'),
-                                              Text('Ksh ${contributions.amount}')
-                                            ],
-                                          )
-                                        ],
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.start,
+                                                  children: [
+                                                    // const SizedBox(child: Text('Amount:')),
+                                                    SizedBox(child: Text('Ksh ${NumberFormat('#,###').format(contributions.amount)}', style: const TextStyle(fontWeight: FontWeight.bold),))
+                                                  ],
+                                                )
+                                              ],
+                                            ),
+
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 );
                               },
-                            );
-                          }
-                          return const Text('Loading...');
-                            // Center(
-                            //   child: SizedBox(
-                            //       width: 46,
-                            //       height: 46,
-                            //       child: CircularProgressIndicator(color: colors.green,)));
-                        },
-                      )
-                  ),
-                  // SizedBox(
-                  //   height: 48,
-                  //   child: Row(
-                  //     mainAxisAlignment: MainAxisAlignment.center,
-                  //     children: [
-                  //       IconButton(onPressed: ()=> Navigator.pop(context), icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.tertiary,size: 36,))
-                  //     ],
-                  //   ),
-                  // )
+                            ),
+                          );
+                        }
+                        return Center(
+                            child: SizedBox(
+                                width: 46,
+                                height: 46,
+                                child: CircularProgressIndicator(color: colors.green,)));
+                      },
+                    )
+                ),
+                // SizedBox(
+                //   height: 48,
+                //   child: Row(
+                //     mainAxisAlignment: MainAxisAlignment.center,
+                //     children: [
+                //       IconButton(onPressed: ()=> Navigator.pop(context), icon: Icon(Icons.close_rounded, color: Theme.of(context).colorScheme.tertiary,size: 36,))
+                //     ],
+                //   ),
+                // )
 
-                ],
-              ),
+              ],
             ),
           );
         }

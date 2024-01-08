@@ -4,7 +4,8 @@ import 'package:http/http.dart' as http;
 
 class MembersApi{
   // final String _url = 'http://10.0.2.2:8080/api/member/get-all';
-  final String _url = 'https://known-krill-greatly.ngrok-free.app/api/member/get-all';
+  // final String _url = 'https://sojrelsacco.com/api/member/get-all';
+  final String _url = "https://known-krill-greatly.ngrok-free.app/api/member/get-all";
   late final String token;
 
   getAllMembers() async {

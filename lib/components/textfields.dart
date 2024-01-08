@@ -1,3 +1,5 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:sojrel_sacco_client/utils/colors.dart';
 
@@ -102,6 +104,58 @@ class NumericTextField extends StatelessWidget {
         focusColor: colors.green,
         fillColor: Theme.of(context).colorScheme.primary,
         filled: true,
+      ),
+    );
+  }
+}
+
+class MySearchTextField extends StatelessWidget {
+  const MySearchTextField({
+    super.key,
+    required this.fieldController,
+    required this.validatorText,
+    required this.hintText,
+    required this.iconColor,
+    required this.suffixIcon,
+    required this.onChanged,
+
+  });
+
+  final TextEditingController fieldController;
+  final String validatorText;
+  final String hintText;
+  final Color iconColor;
+  final Icon? suffixIcon;
+  final void Function(String value)? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    MyColors colors = MyColors();
+    return TextFormField(
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return validatorText;
+        }
+        return null;
+      },
+      onChanged: onChanged,
+      cursorColor: Theme.of(context).colorScheme.tertiary,
+      controller: fieldController,
+      decoration: InputDecoration(
+          hintText: hintText,
+          prefixIconColor: Theme.of(context).colorScheme.secondary,
+          suffixIconColor: Theme.of(context).colorScheme.secondary,
+          suffixIcon: suffixIcon,
+          iconColor: iconColor,
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: colors.green),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: colors.green),
+          ),
+          fillColor: colors.transparent,
+          filled: true,
+          hintStyle: TextStyle(color: Theme.of(context).colorScheme.secondary,)
       ),
     );
   }

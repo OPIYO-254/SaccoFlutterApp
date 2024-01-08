@@ -12,12 +12,12 @@ import '../models/loan_model.dart';
 
 class LoansService{
   Future<List<Loan>?> fetchMembersLoans() async{
+    List<Loan> loans = [];
     try {
       Response res = await LoansController().getMembersLoans();
       List jsonData = await jsonDecode(res.body.trim());
-      List<Loan> loans = [];
       if(jsonData != []){
-        jsonData.forEach((e) {
+        for (var e in jsonData) {
           Loan loan = Loan();
           loan.id = e['id'];
           loan.principal=e['principal'];
@@ -27,23 +27,24 @@ class LoansService{
           loan.amount=e['amount'];
           loan.applicationDate=e['applicationDate'];
           loans.add(loan);
-        });
+        }
       }
-      return loans;
     }
     catch(e){
-      print(e.toString());
+      if (kDebugMode) {
+        print(e.toString());
+      }
     }
+    return loans;
   }
 
   Future<List<Loan>?> getAllLoans() async{
-
+    List<Loan> loans = [];
     try {
       Response res = await LoansController().getAllLoans();
       List jsonData = await jsonDecode(res.body.trim());
-      List<Loan> loans = [];
       if(jsonData != []){
-        jsonData.forEach((e) {
+        for (var e in jsonData) {
           Loan loan = Loan();
           loan.id = e['id'];
           loan.principal=e['principal'];
@@ -57,61 +58,64 @@ class LoansService{
           loan.borrowerMname=e['borrowerMname'];
           loan.borrowerLname=e['borrowerLname'];
           loans.add(loan);
-        });
+        }
       }
-      return loans;
     }
     catch(e){
-      print(e.toString());
+      if (kDebugMode) {
+        print(e.toString());
+      }
     }
+    return loans;
   }
 
   Future<List<Member>?> getLoanGuarantors(loanId) async {
+    List<Member> guarantors =[];
     try{
       Response res = await LoansController().getLoanGuarantors(loanId);
       Map<String, dynamic> jsonData = await jsonDecode(res.body);
       List guarantorsList = jsonData['guarantors'];
-      print(jsonData);
-      List<Member> guarantors =[];
-      if(guarantorsList!=null){
-        guarantorsList.forEach((e){
-          Member guarantor = Member();
-          guarantor.id = e['id'];
-          guarantor.firstName=e['firstName'];
-          guarantor.midName=e['midName'];
-          guarantor.lastName=e['lastName'];
-          guarantors.add(guarantor);
-        });
+      // print(jsonData);
+      for (var e in guarantorsList) {
+        Member guarantor = Member();
+        guarantor.id = e['id'];
+        guarantor.firstName=e['firstName'];
+        guarantor.midName=e['midName'];
+        guarantor.lastName=e['lastName'];
+        guarantors.add(guarantor);
       }
-      return guarantors;
+
     }
     catch(ex){
-      print(ex.toString());
+      if (kDebugMode) {
+        print(ex.toString());
+      }
     }
+    return guarantors;
 
   }
 
   Future<List<LoanGuarantor>?> getGuaranteedAmount(loanId) async {
+    List<LoanGuarantor> guarantees = [];
     try{
       Response res = await LoansController().getGuaranteedAmount(loanId);
       List jsonData = await jsonDecode(res.body);
       // print(jsonData);
-      List<LoanGuarantor> guarantees = [];
-      if(jsonData!=null){
-        jsonData.forEach((e) {
-          LoanGuarantor lg=LoanGuarantor();
-          lg.memberId=e['memberId'];
-          lg.firstName=e['firstName'];
-          lg.midName=e['midName'];
-          lg.amount=e['amount'];
-          guarantees.add(lg);
-        });
+      for (var e in jsonData) {
+        LoanGuarantor lg=LoanGuarantor();
+        lg.memberId=e['memberId'];
+        lg.firstName=e['firstName'];
+        lg.midName=e['midName'];
+        lg.amount=e['amount'];
+        guarantees.add(lg);
       }
-      return guarantees;
     }
     catch(ex){
-      print(ex.toString());
+      if (kDebugMode) {
+        print(ex.toString());
+      }
     }
+    return guarantees;
   }
 
   Future<Loan> getLoanDetails(loanId) async {
@@ -140,20 +144,25 @@ class LoansService{
       List jsonData = jsonDecode(res.body.trim());
       // print(jsonData);
       List<Repayment> repayments =[];
-      if(jsonData != null){
-        jsonData.forEach((e) {
-          Repayment repayment = Repayment();
-          repayment.loanId = e['loanId'];
-          repayment.repaymentDate=e['repaymentDate'];
-          repayment.amount=e['amount'];
-          repayments.add(repayment);
-        });
+      for (var e in jsonData) {
+        Repayment repayment = Repayment();
+        repayment.loanId = e['loanId'];
+        repayment.repaymentDate=e['repaymentDate'];
+        repayment.amount=e['amount'];
+        repayments.add(repayment);
       }
       return repayments;
     }
     catch(e){
-      throw e;
+      rethrow;
     }
+  }
+
+  getTotalGuaranteedAmount(String? guarantorId) async{
+    Response res = await LoansController().getTotalGuaranteedAmount(guarantorId);
+    var jsonData = jsonDecode(res.body.trim());
+    return jsonData;
+
   }
 
 }

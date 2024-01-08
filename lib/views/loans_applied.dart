@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sojrel_sacco_client/components/buttons.dart';
 import 'package:sojrel_sacco_client/components/divider.dart';
@@ -94,127 +95,134 @@ class _GuaranteeLoanState extends State<GuaranteeLoan> {
                     builder: (context, snapshot) {
                       if(snapshot.hasData){
                         appliedLoans = snapshot.data;
-                        return ListView.builder(
-                            // scrollDirection: Axis.horizontal,
-                            shrinkWrap: true,
-                            itemCount: appliedLoans == null? 0: appliedLoans?.length,
-                            itemBuilder: (BuildContext context, int index){
-                              Loan? loans = appliedLoans?[index];
-                              return Column(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    margin: EdgeInsets.symmetric(horizontal: 4),
-                                    height: 200,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        return LiquidPullToRefresh(
+                          onRefresh: ()=>getAppliedLoans(),
+                          showChildOpacityTransition: false,
+                          backgroundColor: colors.green,
+                          color: Colors.transparent,
+                          height: 80,
+                          child: ListView.builder(
+                              // scrollDirection: Axis.horizontal,
+                              shrinkWrap: true,
+                              itemCount: appliedLoans == null? 0: appliedLoans?.length,
+                              itemBuilder: (BuildContext context, int index){
+                                Loan? loans = appliedLoans?[index];
+                                return Column(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                                      height: 200,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.primary,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
-                                          children: [
-                                            SizedBox(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('Loan:'),
-                                                  Text('#${loans!.id}', style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),),
-                                                ],
+                                            children: [
+                                              SizedBox(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Text('Loan:'),
+                                                    Text('#${loans!.id}', style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                            SizedBox(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  const Text('Application Date:'),
-                                                  Text(DateFormat.yMMMEd().format(DateTime.parse(loans.applicationDate!)),
-                                                      style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold)),
-                                                ],
+                                              SizedBox(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                                  children: [
+                                                    const Text('Application Date:'),
+                                                    Text(DateFormat.yMMMEd().format(DateTime.parse(loans.applicationDate!)),
+                                                        style: const TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold)),
+                                                  ],
+                                                ),
+                                              )
+
+                                            ],
+                                          ),
+                                          MyDivider(),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              SizedBox(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Text('Loan Type:'),
+                                                    Text('${loans.loanType}', style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.bold),),
+                                                  ],
+                                                ),
                                               ),
-                                            )
+                                              SizedBox(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                                  children: [
+                                                    const Text("Instalments:"),
+                                                    Text('${loans.instalments} Months',style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.bold)),
+                                                  ],
+                                                ),
+                                              )
+
+                                            ],
+                                          ),
+                                          MyDivider(),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              SizedBox(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Text('Applied Amount:'),
+                                                    Text('Ksh ${loans.principal}', style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.bold),),
+                                                  ],
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                                  children: [
+                                                    const Text('Repayable Amount:'),
+                                                    Text('Ksh ${loans.amount}',style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.bold))
+                                                  ],
+                                                ),
+                                              )
 
                                           ],
-                                        ),
-                                        MyDivider(),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            SizedBox(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('Loan Type:'),
-                                                  Text('${loans.loanType}', style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.bold),),
-                                                ],
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  Text("Instalments:"),
-                                                  Text('${loans.instalments} Months',style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.bold)),
-                                                ],
-                                              ),
-                                            )
+                                          ),
+                                          MyDivider(),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
 
-                                          ],
-                                        ),
-                                        MyDivider(),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            SizedBox(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('Applied Amount:'),
-                                                  Text('Ksh ${loans.principal}', style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.bold),),
-                                                ],
+                                                  child: RoundedButton(width: 100,color:colors.green, borderRadius:BorderRadius.circular(24), text: "Add", onTap: ()=>{
+                                                    prefs.setInt('loanId', loans.id!),
+                                                    Navigator.push(context, MaterialPageRoute(builder: (context)=>const AddGuarantors()))
+                                                  }, height: 36,)),
+                                              const SizedBox(width: 12,),
+                                              SizedBox(
+                                                  child: RoundedButton(width: 100, color:colors.green, height: 36, borderRadius:BorderRadius.circular(24), text: "View", onTap: ()=>{
+                                                    loansGuarantorsBottomSheet(context,loans.id!)
+                                                  },)
                                               ),
-                                            ),
-                                            SizedBox(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                children: [
-                                                  const Text('Repayable Amount:'),
-                                                  Text('Ksh ${loans.amount}',style: const TextStyle(fontSize: 14.0,fontWeight: FontWeight.bold))
-                                                ],
-                                              ),
-                                            )
-
+                                            ],
+                                          )
                                         ],
-                                        ),
-                                        MyDivider(),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            SizedBox(
-
-                                                child: RoundedButton(width: 100,color:colors.green, borderRadius:BorderRadius.circular(24), text: "Add", onTap: ()=>{
-                                                  prefs.setInt('loanId', loans.id!),
-                                                  Navigator.push(context, MaterialPageRoute(builder: (context)=>const AddGuarantors()))
-                                                }, height: 36,)),
-                                            const SizedBox(width: 12,),
-                                            SizedBox(
-                                                child: RoundedButton(width: 100, color:colors.green, height: 36, borderRadius:BorderRadius.circular(24), text: "View", onTap: ()=>{
-                                                  loansGuarantorsBottomSheet(context,loans.id!)
-                                                },)
-                                            ),
-                                          ],
-                                        )
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 12,),
-                                ],
-                              );
-                            });
+                                    const SizedBox(height: 12,),
+                                  ],
+                                );
+                              }),
+                        );
                       }
                       return Center(
                         child: SizedBox(
@@ -339,36 +347,43 @@ class _GuaranteeLoanState extends State<GuaranteeLoan> {
                         builder: (context, snapshot){
                           if(snapshot.hasData){
                             guarantee = snapshot.data;
-                            return ListView.builder(
-                              itemCount: guarantee == null? 0: guarantee!.length,
-                              itemBuilder: (BuildContext context, int index){
-                                LoanGuarantor guarantor = guarantee![index];
-                                return Container(
-                                  height: 48,
-                                  margin: const EdgeInsets.symmetric(vertical: 4),
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4.0),
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text('${guarantor!.memberId}', style: const TextStyle(fontWeight: FontWeight.bold),),
-                                            const SizedBox(width: 4,),
-                                            Text(guarantor.midName != '' ? '${guarantor.firstName} ${guarantor.midName}':'${guarantor.firstName}',),
-                                          ],
-                                        ),
-                                        Text(guarantor.amount!=null?'Ksh. ${guarantor.amount}':'Ksh 00.0')
-                                      ],
+                            return LiquidPullToRefresh(
+                              onRefresh: ()=>getGuaranteedAmount(loanId),
+                              showChildOpacityTransition: false,
+                              backgroundColor: colors.green,
+                              color: Colors.transparent,
+                              height: 80,
+                              child: ListView.builder(
+                                itemCount: guarantee == null? 0: guarantee!.length,
+                                itemBuilder: (BuildContext context, int index){
+                                  LoanGuarantor guarantor = guarantee![index];
+                                  return Container(
+                                    height: 48,
+                                    margin: const EdgeInsets.symmetric(vertical: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4.0),
+                                      color: Theme.of(context).colorScheme.primary,
                                     ),
-                                  ),
-                                );
-                              },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text('${guarantor!.memberId}', style: const TextStyle(fontWeight: FontWeight.bold),),
+                                              const SizedBox(width: 4,),
+                                              Text(guarantor.midName != '' ? '${guarantor.firstName} ${guarantor.midName}':'${guarantor.firstName}',),
+                                            ],
+                                          ),
+                                          Text(guarantor.amount!=null?'Ksh. ${guarantor.amount}':'Ksh 00.0')
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                             );
                           }
                           return Center(

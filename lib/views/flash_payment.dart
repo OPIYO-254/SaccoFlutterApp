@@ -13,7 +13,7 @@ import '../models/member_model.dart';
 import '../services/member_details_service.dart';
 
 class FlashPaymentPage extends StatefulWidget {
-  FlashPaymentPage({super.key, required this.amount, required this.loanId});
+  const FlashPaymentPage({super.key, required this.amount, required this.loanId});
 
   final double amount;
   final int loanId;

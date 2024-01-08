@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sojrel_sacco_client/components/divider.dart';
 import 'package:sojrel_sacco_client/components/toast.dart';
@@ -38,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscureText = true;
 
   late bool userHasTouchId;
-  bool _useTouchId = false;
+  final bool _useTouchId = false;
   final LocalAuthentication auth = LocalAuthentication();
   final FlutterSecureStorage storage = const FlutterSecureStorage();
 
@@ -230,10 +231,10 @@ class _LoginPageState extends State<LoginPage> {
                           hintText: 'Enter email',
                           obscureText: false,
                           iconColor: Theme.of(context).colorScheme.secondary,
-                          prefixIcon: Icon(Icons.email_outlined, size: 20,),
+                          prefixIcon: const Icon(Icons.email_outlined, size: 20,),
                           keyboardType: TextInputType.emailAddress,
                         ),
-                        SizedBox(height: 12,),
+                        const SizedBox(height: 12,),
                         MyTextFormField(
                           fieldController: passwordFieldController,
                           validatorText: 'You must enter password',
@@ -324,14 +325,14 @@ class _LoginPageState extends State<LoginPage> {
     return showDialog(
         context: context,
         builder: (context)=>AlertDialog(
-          title: Text('Reset Password'),
+          title: const Text('Reset Password'),
           content: Form(
             key: _resetPasswordFormKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(height: 16,),
+                const SizedBox(height: 16,),
                 MyTextFormField(
                     keyboardType: TextInputType.emailAddress,
                     fieldController: _resetEmailFieldController,
@@ -339,21 +340,57 @@ class _LoginPageState extends State<LoginPage> {
                     hintText: 'Enter your email',
                     obscureText: false,
                     iconColor: Theme.of(context).colorScheme.secondary,
-                    prefixIcon: Icon(Icons.email_outlined))
+                    prefixIcon: const Icon(Icons.email_outlined))
               ],
             ),
           ),
           actions: [
             FlatTextButton(
                 onPressed: ()=>Navigator.pop(context),
-                text: 'CANCEL'),
+                text: 'CLOSE'),
             FlatTextButton(
-                onPressed: (){},
+                onPressed: ()=>resetPassword(context),
                 text: 'SEND')
           ],
         )
     );
   }
+
+  Future<void> resetPassword(BuildContext context) async{
+    // var data = {"email":};
+    if (_resetPasswordFormKey.currentState!.validate()) {
+      showDialog(
+        context: context,
+        builder: (context){
+          return Center(
+            child: CircularProgressIndicator(color: colors.green,),
+          );
+        },
+      );
+      try {
+        Response res = await AuthApi().resetPassword(
+            _resetEmailFieldController.text, "/forgot-password");
+        var jsonData = jsonDecode(res.body.trim());
+        var message = jsonData['message'];
+        var status = jsonData['status'];
+        if (status == "success") {
+          MyToast().showToast(message);
+          _resetEmailFieldController.clear();
+          Navigator.pop(context);
+        }
+        else {
+          MyToast().showToast(jsonData['error']);
+          _resetEmailFieldController.clear();
+          Navigator.pop(context);
+        }
+      }
+      catch(e){
+        Navigator.pop(context);
+        rethrow;
+      }
+    }
+  }
+
 }
 
 

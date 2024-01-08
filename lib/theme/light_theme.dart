@@ -7,7 +7,7 @@ MyColors colors = MyColors();
 ThemeData lightTheme = ThemeData(
   brightness: Brightness.light,
   colorScheme: ColorScheme.light(
-    background: Colors.grey[100]!,
+    background: Colors.grey[200]!,
     primary:Colors.white,
     secondary: Colors.grey[500]!,
     tertiary: Colors.grey[900]!,

@@ -6,6 +6,9 @@ class FlashLoanModel{
   String? loanStatus;
   double? amount;
   String? memberId;
+  double? amountPaid;
+  double? processingFee;
+  bool? repaidInTime;
 
   FlashLoanModel({
     this.id,
@@ -14,7 +17,10 @@ class FlashLoanModel{
     this.repayDate,
     this.loanStatus,
     this.amount,
-    this.memberId
+    this.memberId,
+    this.amountPaid,
+    this.processingFee,
+    this.repaidInTime
   });
 
   FlashLoanModel.fromJson(Map<String, dynamic> map){
@@ -24,6 +30,9 @@ class FlashLoanModel{
     repayDate=map['repayDate'];
     loanStatus=map['loanStatus'];
     amount=map['amount'];
+    amountPaid=map['totalRepaid'];
+    processingFee=map['processingFee'];
+    repaidInTime=map['repaidInTime'];
     // memberId=map['memberId'];
   }
 }

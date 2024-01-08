@@ -54,7 +54,6 @@ class _LoansPageState extends State<LoansPage> {
     List<Loan> appliedLoans = [];
     loans?.forEach((e) {
       if (e.loanStatus == 'REVIEW') {
-        // print(e);
         appliedLoans.add(e);
       }
     });
@@ -433,7 +432,7 @@ class _LoansPageState extends State<LoansPage> {
                                               shape: BoxShape.circle,
                                             ),
                                             child: IconButton(
-                                              icon: Icon(Icons.flash_on,color: colors.white), onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context)=>FlashLoan())),
+                                              icon: Icon(Icons.flash_on,color: colors.white), onPressed: () async => await Navigator.push(context, MaterialPageRoute(builder: (context)=> const FlashLoan())),
                                               color: colors.green,
                                             )),
                                         Text('Flash'),
@@ -513,7 +512,7 @@ class _LoansPageState extends State<LoansPage> {
                     ],
                   ),
                 ),
-                SizedBox(height: 12,),
+                const SizedBox(height: 12,),
                 Container(
                   // height: MediaQuery.of(context).size.height/3.5,
                   height: 150,
@@ -596,7 +595,7 @@ class _LoansPageState extends State<LoansPage> {
                     return null;
                   },
                   hintText: 'Enter Amount',),
-                SizedBox(height: 12,),
+                const SizedBox(height: 12,),
                 NumericTextField(
                   controller: _loanInstalmentController,
                   validator: (value) {
